@@ -66,79 +66,114 @@ int modifyEmptySpaces(int row, int column, Segment& seg, int adjacentEmptySpaces
     return adjacentEmptySpaces;
 }
 
-void findLegalPlacement(Ship& ship) {
-    int adjacentEmptySpaces = 0;
-    int rowStart = 0;
-    int columnStart = 0;
-    int randomNum = getRandomNum(gridLength - (ship.NumberOfSegments - 1));
-
-    if (ship.isHorizontal)
-        rowStart = randomNum;
-    else
-        columnStart = randomNum;
-
-    std::cout << "Starting Row: " << rowStart << '\n'
-              << "Starting Column: " << columnStart << '\n'
-              << "Number of segment locations: " << ship.segmentLocations.size() << std::endl;
-
-    while (ship.segmentLocations.size() < ship.NumberOfSegments) {
-        for (int row = rowStart; row < gridLength; row++) {
-            for (int col = columnStart; col < gridLength; col++) {
-                for (Segment seg: ship.segmentLocations) {
-                    if (row == seg.rowValue && col == seg.columnValue) {
-                        std::cout << "re-do!!";
-                        findLegalPlacement(ship);
-                    }
-                }
-                adjacentEmptySpaces += 1;
-                std::cout << "Adjacent Empty Spaces Counter: " << adjacentEmptySpaces << std::endl;
-
-                if (adjacentEmptySpaces >= ship.NumberOfSegments) {
-                    if (ship.isHorizontal) {
-                        plotSegments(ship, row, col - (ship.NumberOfSegments - 1));
-                    }
-                    else {
-                        plotSegments(ship, col - (ship.NumberOfSegments - 1), col);
-                    }
-                    std::cout << ship << '\n' << std::endl;
-                    return;
-                }
-            }
-        }
-    }
-//    else {
+//void findLegalPlacement(std::vector<Ship>& allPieces, Ship& ship) {
+//    int adjacentEmptySpaces = 0;
+//    int rowStart = 0;
+//    int columnStart = 0;
+//    int randomNum = getRandomNum(gridLength - (ship.NumberOfSegments - 1));
+//
+//    if (ship.isHorizontal)
+//        rowStart = randomNum;
+//    else
 //        columnStart = randomNum;
 //
-//        std::cout << "Starting Column: " << columnStart << '\n'
-//                  << "Number of segment locations: " << ship.segmentLocations.size() << std::endl;
+//    std::cout << "Starting Row: " << rowStart << '\n'
+//              << "Starting Column: " << columnStart << '\n'
+//              << "Number of segment locations: " << ship.segmentLocations.size() << std::endl;
 //
-//        while (ship.segmentLocations.size() < ship.NumberOfSegments) {
+//    while (ship.segmentLocations.size() < ship.NumberOfSegments) {
+//        for (int row = rowStart; row < gridLength; row++) {
 //            for (int col = columnStart; col < gridLength; col++) {
-//                for (int row = rowStart; row < gridLength; row++) {
-//                    for (Segment seg: ship.segmentLocations) {
+//                for (Ship piece: allPieces) {
+//                    for (Segment seg: piece.segmentLocations) {
 //                        if (row == seg.rowValue && col == seg.columnValue) {
 //                            adjacentEmptySpaces = 0;
+//                            std::cout << "re-do!!";
 //                            break;
 //                        }
 //                    }
-//                    adjacentEmptySpaces += 1;
-//                    std::cout << "Adjacent Empty Spaces Counter: " << adjacentEmptySpaces << std::endl;
-//                    if (adjacentEmptySpaces >= ship.NumberOfSegments) {
-//                        plotSegments(ship, row - (ship.NumberOfSegments - 1), col);
-//                        std::cout << ship << '\n' << std::endl;
-//                        return;
+//                }
+//                adjacentEmptySpaces += 1;
+//                std::cout << "Adjacent Empty Spaces Counter: " << adjacentEmptySpaces << std::endl;
+//
+//                if (adjacentEmptySpaces >= ship.NumberOfSegments) {
+//                    if (ship.isHorizontal) {
+//                        plotSegments(ship, row, col - (ship.NumberOfSegments - 1));
 //                    }
+//                    else {
+//                        plotSegments(ship, col - (ship.NumberOfSegments - 1), col);
+//                    }
+//                    std::cout << ship << '\n' << std::endl;
+//                    return;
 //                }
 //            }
 //        }
 //    }
+//}
+
+
+
+
+bool isPathClear(std::vector<Ship>& allPieces, Ship& currentShip, int startingRow, int startingColumn) {
+    if (currentShip.isHorizontal) {
+        for (int i = startingColumn; i < currentShip.NumberOfSegments + startingColumn; i++) {
+            for (Ship piece: allPieces) {
+                for (Segment seg: piece.segmentLocations) {
+                    std::cout << "looking at - row: " << startingRow << ", column:" << i << '\n'
+                              << "current segment being churned through - row: " << seg.rowValue << ", column: " << seg.rowValue << '\n' << std::endl;
+                    if (startingRow == seg.rowValue && i == seg.columnValue)
+                        return false;
+                }
+            }
+        }
+    }
+    else {
+        for (int i = startingRow; i < currentShip.NumberOfSegments + startingRow; i++) {
+            for (Ship piece: allPieces) {
+                for (Segment seg: piece.segmentLocations) {
+                    std::cout << "looking at - row: " << startingRow << ", column:" << i << '\n'
+                              << "current segment being churned through - row: " << seg.rowValue << ", column: " << seg.rowValue << '\n' << std::endl;
+                    if (i == seg.rowValue && startingColumn == seg.columnValue)
+                        return false;
+                }
+            }
+        }
+    }
+    return true;
+}
+
+int getStartingPosition(int numberOfSegments) {
+    return getRandomNum((gridLength - numberOfSegments));
+}
+
+void findLegalPlacement(std::vector<Ship>& allPieces, Ship& ship) {
+    int startingRow;
+    int startingColumn;
+
+    while (ship.segmentLocations.empty()) {
+        if (ship.isHorizontal) {
+            startingRow = getStartingPosition(0);
+            startingColumn = getStartingPosition(ship.NumberOfSegments);
+        } else {
+            startingRow = getStartingPosition(ship.NumberOfSegments);
+            startingColumn = getStartingPosition(0);
+        }
+
+        std::cout << "Starting Row: " << startingRow << '\n'
+                  << "Starting Column: " << startingColumn << '\n'
+                  << "Is Horizontal" << std::boolalpha << ship.isHorizontal << '\n'
+                  << "Number of segments: " << ship.NumberOfSegments << '\n' << std::endl;
+
+        if (isPathClear(allPieces, ship, startingRow, startingColumn)) {
+            plotSegments(ship, startingRow, startingColumn);
+        }
+    }
 }
 
 
 
+
 //player guess
-
-
 void increaseGuessCounter(int& guessCounter) {
     guessCounter += 1;
 }
@@ -236,7 +271,7 @@ void printGridVisual(char grid[gridLength][gridLength], std::vector<Ship>& allPi
             for (Ship ship: allPieces) {
                 for (Segment seg: ship.segmentLocations) {
                     if (row == seg.rowValue && col == seg.columnValue) {
-                        grid[row][col] = 'O';
+                        grid[row][col] = 'a' + ship.NumberOfSegments;
                         break;
                     }
                 }
@@ -279,8 +314,12 @@ int main() {
     allEnemyPieces.push_back({3, false});
     allEnemyPieces.push_back({2, true});
 
-    for (auto & ship : allEnemyPieces) {
-        findLegalPlacement(ship);
+    for (auto& ship : allEnemyPieces) {
+        findLegalPlacement(allEnemyPieces, ship);
+    }
+
+    for (auto& ship: allEnemyPieces) {
+        std::cout << "Ship" << ship.NumberOfSegments << " - " << ship << std::endl;
     }
 
     char visualGrid[7][7];
